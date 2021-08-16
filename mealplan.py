@@ -9,37 +9,48 @@ if __name__ == '__main__':
     parser.add_argument('--start-date', type=str,
         default=arrow.utcnow().to('Asia/Singapore').format('DD-MM-YY'),
         required=False, help='dd-mm-yy, default: today')
+    parser.add_argument('--num-days', type=int, default=7,
+                        required=False, help='num days to plan, default: 7')
     parser.add_argument('--lunch-time', type=str, default='12:30',
                         required=False, help='hh:mm, default: 12:30')
     parser.add_argument('--dinner-time', type=str, default='18:30',
                         required=False, help='hh:mm, default: 18:30')
+    parser.add_argument('--exclude-weekends', action='store_true',
+                        help='whether to exclude weekends for planning')
     args = parser.parse_args()
+
     print(f'Start date: {args.start_date}')
     acceptable_foods = [
         'Udon don', 'Hwangs', 'Sapore', 'Dumplings', 'Salad', 'Wok Fried',
         'Chicken Rice', 'Cai Fan', 'Noodles'
     ]
     random.shuffle(acceptable_foods)
-
-    ptr = 0
-    num_days = 7
-    planned_foods = []
-    for _ in range(num_days * 2):
-        planned_foods.append(acceptable_foods[ptr % len(acceptable_foods)])
-        ptr += 1
+    start_day_of_week = arrow.get(args.start_date, 'DD-MM-YY').weekday()
 
     c = Calendar()
-    for i, planned_food in enumerate(planned_foods):
-        is_lunch = i % 2 == 0
-        prefix = 'Lunch: ' if is_lunch else 'Dinner: '
-        e = Event()
-        e.name = prefix + planned_food
-        time = args.lunch_time if is_lunch else args.dinner_time
-        date = arrow.get(args.start_date + ' ' + time, 'DD-MM-YY HH:mm',
-                         tzinfo='Asia/Singapore')
-        e.begin = date.shift(days=i // 2)
-        e.duration = {'minutes': 30}
-        c.events.add(e)
+    cnt = 0
+    for i in range(args.num_days):
+        if args.exclude_weekends and (start_day_of_week + i) % 7 > 4:
+            continue
+        if args.lunch_time:
+            e = Event()
+            e.name = 'Lunch: ' + acceptable_foods[cnt % len(acceptable_foods)]
+            date = arrow.get(args.start_date + ' ' + args.lunch_time,
+                             'DD-MM-YY HH:mm', tzinfo='Asia/Singapore')
+            e.begin = date.shift(days=i)
+            e.duration = {'minutes': 30}
+            c.events.add(e)
+            cnt += 1
+
+        if args.dinner_time:
+            e = Event()
+            e.name = 'Dinner: ' + acceptable_foods[cnt % len(acceptable_foods)]
+            date = arrow.get(args.start_date + ' ' + args.dinner_time,
+                             'DD-MM-YY HH:mm', tzinfo='Asia/Singapore')
+            e.begin = date.shift(days=i)
+            e.duration = {'minutes': 30}
+            c.events.add(e)
+            cnt += 1
 
     with open('planned_foods.ics', 'w') as my_file:
         my_file.writelines(c)
