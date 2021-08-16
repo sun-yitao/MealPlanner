@@ -17,14 +17,18 @@ if __name__ == '__main__':
                         required=False, help='hh:mm, default: 18:30')
     parser.add_argument('--exclude-weekends', action='store_true',
                         help='whether to exclude weekends for planning')
+    parser.add_argument('--exclude-lunch', action='store_true',
+                        help='whether to exclude lunch for planning')
+    parser.add_argument('--exclude-dinner', action='store_true',
+                        help='whether to exclude dinner for planning')
     args = parser.parse_args()
 
-    print(f'Start date: {args.start_date}')
-    acceptable_foods = [
+    acceptable_foods = [  # EDIT HERE
         'Udon don', 'Hwangs', 'Sapore', 'Dumplings', 'Salad', 'Wok Fried',
         'Chicken Rice', 'Cai Fan', 'Noodles'
     ]
     random.shuffle(acceptable_foods)
+    print(f'Start date: {args.start_date}')
     start_day_of_week = arrow.get(args.start_date, 'DD-MM-YY').weekday()
 
     c = Calendar()
@@ -32,7 +36,7 @@ if __name__ == '__main__':
     for i in range(args.num_days):
         if args.exclude_weekends and (start_day_of_week + i) % 7 > 4:
             continue
-        if args.lunch_time:
+        if not args.exclude_lunch:
             e = Event()
             e.name = 'Lunch: ' + acceptable_foods[cnt % len(acceptable_foods)]
             date = arrow.get(args.start_date + ' ' + args.lunch_time,
@@ -42,7 +46,7 @@ if __name__ == '__main__':
             c.events.add(e)
             cnt += 1
 
-        if args.dinner_time:
+        if not args.exclude_dinner:
             e = Event()
             e.name = 'Dinner: ' + acceptable_foods[cnt % len(acceptable_foods)]
             date = arrow.get(args.start_date + ' ' + args.dinner_time,
