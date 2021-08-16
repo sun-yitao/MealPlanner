@@ -6,13 +6,15 @@ import random
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Plan your meals.')
-    parser.add_argument('--start-date', type=str, default='17-08-21',
-                        required=False, help='dd-mm-yy')
+    parser.add_argument('--start-date', type=str,
+        default=arrow.utcnow().to('Asia/Singapore').format('DD-MM-YY'),
+        required=False, help='dd-mm-yy, default: today')
     parser.add_argument('--lunch-time', type=str, default='12:30',
-                        required=False, help='hh:mm')
+                        required=False, help='hh:mm, default: 12:30')
     parser.add_argument('--dinner-time', type=str, default='18:30',
-                        required=False, help='hh:mm')
+                        required=False, help='hh:mm, default: 18:30')
     args = parser.parse_args()
+    print(f'Start date: {args.start_date}')
     acceptable_foods = [
         'Udon don', 'Hwangs', 'Sapore', 'Dumplings', 'Salad', 'Wok Fried',
         'Chicken Rice', 'Cai Fan', 'Noodles'
@@ -35,9 +37,10 @@ if __name__ == '__main__':
         time = args.lunch_time if is_lunch else args.dinner_time
         date = arrow.get(args.start_date + ' ' + time, 'DD-MM-YY HH:mm',
                          tzinfo='Asia/Singapore')
-        e.begin = date.shift(days=i//2)
+        e.begin = date.shift(days=i // 2)
         e.duration = {'minutes': 30}
         c.events.add(e)
 
     with open('planned_foods.ics', 'w') as my_file:
         my_file.writelines(c)
+    print('Saved to planned_foods.ics in current directory')
